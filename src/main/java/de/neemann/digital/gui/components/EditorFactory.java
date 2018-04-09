@@ -1,21 +1,32 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.gui.components;
 
 import de.neemann.digital.analyse.expression.format.FormatToExpression;
 import de.neemann.digital.core.Bits;
+import de.neemann.digital.core.IntFormat;
+import de.neemann.digital.core.Model;
 import de.neemann.digital.core.NodeException;
 import de.neemann.digital.core.arithmetic.BarrelShifterMode;
 import de.neemann.digital.core.arithmetic.LeftRightFormat;
 import de.neemann.digital.core.element.*;
+import de.neemann.digital.core.extern.Application;
+import de.neemann.digital.core.extern.PortDefinition;
 import de.neemann.digital.core.io.InValue;
-import de.neemann.digital.core.IntFormat;
 import de.neemann.digital.core.memory.DataField;
 import de.neemann.digital.core.memory.ROM;
+import de.neemann.digital.core.memory.rom.ROMManger;
+import de.neemann.digital.draw.elements.PinException;
 import de.neemann.digital.draw.elements.VisualElement;
 import de.neemann.digital.draw.library.ElementNotFoundException;
 import de.neemann.digital.draw.model.InverterConfig;
+import de.neemann.digital.draw.model.ModelCreator;
 import de.neemann.digital.draw.shapes.custom.CustomShapeDescription;
 import de.neemann.digital.gui.Main;
-import de.neemann.digital.gui.SaveAsHelper;
+import de.neemann.digital.gui.components.table.ShowStringDialog;
 import de.neemann.digital.gui.components.testing.TestCaseDescriptionEditor;
 import de.neemann.digital.gui.sync.NoSync;
 import de.neemann.digital.lang.Lang;
@@ -25,7 +36,6 @@ import de.neemann.gui.language.Bundle;
 import de.neemann.gui.language.Language;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -37,7 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * @author hneemann
  */
 public final class EditorFactory {
 
@@ -64,6 +73,8 @@ public final class EditorFactory {
         add(TestCaseDescription.class, TestCaseDescriptionEditor.class);
         add(FormatToExpression.class, FormatEditor.class);
         add(InverterConfig.class, InverterConfigEditor.class);
+        add(ROMManger.class, ROMManagerEditor.class);
+        add(Application.Type.class, ApplicationTypeEditor.class);
         add(CustomShapeDescription.class, CustomShapeEditor.class);
     }
 
@@ -161,8 +172,18 @@ public final class EditorFactory {
 
         public StringEditor(String value, Key<String> key) {
             if (key instanceof Key.LongString) {
-                text = new JTextArea(6, 30);
-                compToAdd = new JScrollPane(text);
+                Key.LongString k = (Key.LongString) key;
+                text = new JTextArea(k.getRows(), k.getColumns());
+                final JScrollPane scrollPane = new JScrollPane(text);
+
+                if (k.getLineNumbers()) {
+                    final TextLineNumber textLineNumber = new TextLineNumber(text, 3);
+                    scrollPane.setRowHeaderView(textLineNumber);
+                    text.setFont(new Font(Font.MONOSPACED, Font.PLAIN, Screen.getInstance().getFontSize()));
+                }
+
+                this.compToAdd = scrollPane;
+
                 setLabelAtTop(true);
             } else {
                 text = new JTextField(10);
@@ -179,6 +200,12 @@ public final class EditorFactory {
         @Override
         public String getValue() {
             return text.getText().trim();
+        }
+
+        @Override
+        public void setValue(String value) {
+            if (!text.getText().equals(value))
+                text.setText(value);
         }
 
         public JTextComponent getTextComponent() {
@@ -234,6 +261,11 @@ public final class EditorFactory {
 
             return value;
         }
+
+        @Override
+        public void setValue(Integer value) {
+            comboBox.setSelectedItem(value);
+        }
     }
 
     private final static class LongEditor extends LabelEditor<Long> {
@@ -266,6 +298,11 @@ public final class EditorFactory {
             }
             return value;
         }
+
+        @Override
+        public void setValue(Long value) {
+            comboBox.setSelectedItem(value.toString());
+        }
     }
 
     private final static class InValueEditor extends LabelEditor<InValue> {
@@ -291,6 +328,11 @@ public final class EditorFactory {
             } catch (Bits.NumberFormatException e) {
                 throw new EditorParseException(e);
             }
+        }
+
+        @Override
+        public void setValue(InValue value) {
+            comboBox.setSelectedItem(value.toString());
         }
     }
 
@@ -320,6 +362,11 @@ public final class EditorFactory {
 
         JCheckBox getCheckBox() {
             return bool;
+        }
+
+        @Override
+        public void setValue(Boolean value) {
+            bool.setEnabled(value);
         }
     }
 
@@ -360,6 +407,12 @@ public final class EditorFactory {
         public Color getValue() {
             return color;
         }
+
+        @Override
+        public void setValue(Color value) {
+            this.color = value;
+            button.setBackground(color);
+        }
     }
 
     private final static class FileEditor extends LabelEditor<File> {
@@ -399,6 +452,11 @@ public final class EditorFactory {
         public File getValue() {
             return new File(textField.getText());
         }
+
+        @Override
+        public void setValue(File value) {
+            textField.setText(value.getPath());
+        }
     }
 
     private final static class DataFieldEditor extends LabelEditor<DataField> {
@@ -432,27 +490,13 @@ public final class EditorFactory {
                         }
                         int size = 1 << addrBits;
                         DataEditor de = new DataEditor(panel, data, size, dataBits, addrBits, false, NoSync.INST);
+                        de.setFileName(attr.getFile(ROM.LAST_DATA_FILE_KEY));
                         if (de.showDialog()) {
                             data = de.getModifiedDataField();
+                            attr.setFile(ROM.LAST_DATA_FILE_KEY, de.getFileName());
                         }
                     } catch (EditorParseException e1) {
                         new ErrorMessage(Lang.get("msg_invalidEditorValue")).addCause(e1).show(panel);
-                    }
-                }
-            }.createJButton());
-            panel.add(new ToolTipAction(Lang.get("btn_load")) {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    JFileChooser fc = new MyFileChooser();
-                    fc.setSelectedFile(attr.getFile(ROM.LAST_DATA_FILE_KEY));
-                    fc.setFileFilter(new FileNameExtensionFilter("hex", "hex"));
-                    if (fc.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION) {
-                        attr.setFile(ROM.LAST_DATA_FILE_KEY, fc.getSelectedFile());
-                        try {
-                            data = new DataField(fc.getSelectedFile());
-                        } catch (IOException e1) {
-                            new ErrorMessage(Lang.get("msg_errorReadingFile")).addCause(e1).show(panel);
-                        }
                     }
                 }
             }.createJButton());
@@ -470,26 +514,17 @@ public final class EditorFactory {
                             .setToolTip(Lang.get("btn_reload_tt"))
                             .createJButton()
             );
-            panel.add(new ToolTipAction(Lang.get("btn_save")) {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    JFileChooser fc = new MyFileChooser();
-                    fc.setSelectedFile(attr.getFile(ROM.LAST_DATA_FILE_KEY));
-                    fc.setFileFilter(new FileNameExtensionFilter("hex", "hex"));
-                    new SaveAsHelper(panel, fc, "hex").checkOverwrite(
-                            file -> {
-                                attr.setFile(ROM.LAST_DATA_FILE_KEY, file);
-                                data.saveTo(file);
-                            }
-                    );
-                }
-            }.createJButton());
             return panel;
         }
 
         @Override
         public DataField getValue() {
             return data.getMinimized();
+        }
+
+        @Override
+        public void setValue(DataField value) {
+            this.data = value;
         }
     }
 
@@ -513,6 +548,11 @@ public final class EditorFactory {
         @Override
         public Rotation getValue() {
             return new Rotation(comb.getSelectedIndex());
+        }
+
+        @Override
+        public void setValue(Rotation value) {
+            comb.setSelectedIndex(value.getRotation());
         }
     }
 
@@ -540,6 +580,11 @@ public final class EditorFactory {
         public E getValue() {
             return values[comboBox.getSelectedIndex()];
         }
+
+        @Override
+        public void setValue(E value) {
+            comboBox.setSelectedIndex(value.ordinal());
+        }
     }
 
     private static final class IntFormatsEditor extends EnumEditor<IntFormat> {
@@ -557,6 +602,79 @@ public final class EditorFactory {
     private static final class LeftRightFormatsEditor extends EnumEditor<LeftRightFormat> {
         public LeftRightFormatsEditor(LeftRightFormat value, Key<LeftRightFormat> key) {
             super(value, key);
+        }
+    }
+
+    private static final class ApplicationTypeEditor extends EnumEditor<Application.Type> {
+        private final Key<Application.Type> key;
+        private JComboBox combo;
+        private JButton checkButton;
+
+        public ApplicationTypeEditor(Application.Type value, Key<Application.Type> key) {
+            super(value, key);
+            this.key = key;
+        }
+
+        @Override
+        protected JComponent getComponent(ElementAttributes elementAttributes) {
+            combo = (JComboBox) super.getComponent(elementAttributes);
+            checkButton = new ToolTipAction(Lang.get("btn_checkCode")) {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    int n = combo.getSelectedIndex();
+                    if (n >= 0) {
+                        Application.Type appType = Application.Type.values()[n];
+                        Application app = Application.create(appType);
+                        if (app != null) {
+                            try {
+                                getAttributeDialog().storeEditedValues();
+                                if (app.ensureConsistency(elementAttributes))
+                                    getAttributeDialog().updateEditedValues();
+
+                                PortDefinition ins = new PortDefinition(elementAttributes.get(Keys.EXTERNAL_INPUTS));
+                                PortDefinition outs = new PortDefinition(elementAttributes.get(Keys.EXTERNAL_OUTPUTS));
+                                String label = elementAttributes.getCleanLabel();
+                                String code = elementAttributes.get(Keys.EXTERNAL_CODE);
+
+                                try {
+                                    String message = app.checkCode(label, code, ins, outs);
+                                    if (message != null)
+                                        new ErrorMessage(Lang.get("msg_checkResult") + "\n\n" + message).show(getAttributeDialog());
+                                } catch (IOException e) {
+                                    new ErrorMessage(Lang.get("msg_checkResult")).addCause(e).show(getAttributeDialog());
+                                }
+                            } catch (EditorParseException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            }.setToolTip(Lang.get("btn_checkCode_tt")).createJButton();
+            combo.addActionListener(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    enableButton();
+                }
+            });
+
+
+            JPanel p = new JPanel(new BorderLayout());
+            p.add(combo);
+            p.add(checkButton, BorderLayout.EAST);
+
+            enableButton();
+
+            return p;
+        }
+
+        void enableButton() {
+            int n = combo.getSelectedIndex();
+            if (n >= 0) {
+                Application.Type appType = Application.Type.values()[n];
+                Application app = Application.create(appType);
+                if (app != null)
+                    checkButton.setEnabled(app.checkSupported());
+            }
         }
     }
 
@@ -579,6 +697,11 @@ public final class EditorFactory {
         public Language getValue() {
             return (Language) comb.getSelectedItem();
         }
+
+        @Override
+        public void setValue(Language value) {
+            comb.setSelectedItem(value);
+        }
     }
 
     private static class FormatEditor extends LabelEditor<FormatToExpression> {
@@ -598,6 +721,11 @@ public final class EditorFactory {
         @Override
         public FormatToExpression getValue() {
             return (FormatToExpression) comb.getSelectedItem();
+        }
+
+        @Override
+        public void setValue(FormatToExpression value) {
+            comb.setSelectedItem(value);
         }
     }
 
@@ -650,6 +778,12 @@ public final class EditorFactory {
             this.elementAttributes = elementAttributes;
             return button;
         }
+
+        @Override
+        public void setValue(InverterConfig value) {
+            inverterConfig = value;
+            button.setText(getButtonText());
+        }
     }
 
     private final static class InputSelectDialog extends JDialog {
@@ -699,6 +833,66 @@ public final class EditorFactory {
         }
     }
 
+    private static class ROMManagerEditor extends LabelEditor<ROMManger> {
+        private final JPanel buttons;
+        private ROMManger romManager;
+
+        public ROMManagerEditor(ROMManger aRomManager, Key<ROMManger> key) {
+            this.romManager = aRomManager;
+            buttons = new JPanel(new GridLayout(1, 2));
+            buttons.add(new ToolTipAction(Lang.get("btn_help")) {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    new ShowStringDialog(
+                            getAttributeDialog(),
+                            Lang.get("win_romDialogHelpTitle"),
+                            Lang.get("msg_romDialogHelp"), true)
+                            .setVisible(true);
+                }
+            }.createJButton());
+            buttons.add(new ToolTipAction(Lang.get("btn_edit")) {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    Main main = getAttributeDialog().getMain();
+                    if (main != null) {
+                        final ROMEditorDialog romEditorDialog;
+                        try {
+                            CircuitComponent circuitComponent = main.getCircuitComponent();
+                            Model model = new ModelCreator(circuitComponent.getCircuit(), circuitComponent.getLibrary()).createModel(false);
+                            try {
+                                romEditorDialog = new ROMEditorDialog(
+                                        getAttributeDialog(),
+                                        model,
+                                        romManager);
+                                if (romEditorDialog.showDialog())
+                                    romManager = romEditorDialog.getROMManager();
+                            } finally {
+                                model.close();
+                            }
+                        } catch (ElementNotFoundException | PinException | NodeException e) {
+                            new ErrorMessage(Lang.get("msg_errorCreatingModel")).addCause(e).show(getAttributeDialog());
+                        }
+                    }
+                }
+            }.createJButton());
+        }
+
+        @Override
+        protected JComponent getComponent(ElementAttributes elementAttributes) {
+            return buttons;
+        }
+
+        @Override
+        public ROMManger getValue() {
+            return romManager;
+        }
+
+        @Override
+        public void setValue(ROMManger value) {
+            romManager = value;
+        }
+    }
+
     private final static class CustomShapeEditor extends LabelEditor<CustomShapeDescription> {
         private CustomShapeDescription customShapeDescription;
 
@@ -727,6 +921,10 @@ public final class EditorFactory {
         @Override
         public CustomShapeDescription getValue() {
             return customShapeDescription;
+        }
+
+        @Override
+        public void setValue(CustomShapeDescription value) {
         }
     }
 

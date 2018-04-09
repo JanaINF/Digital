@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.draw.shapes;
 
 import de.neemann.digital.core.NodeException;
@@ -29,8 +34,6 @@ import java.util.HashMap;
 
 /**
  * Used to create a shape matching a given name
- *
- * @author hneemann
  */
 public final class ShapeFactory {
 
@@ -89,13 +92,16 @@ public final class ShapeFactory {
         map.put(Out.DESCRIPTION.getName(), OutputShape::new);
         map.put(Out.LEDDESCRIPTION.getName(), LEDShape::new);
         map.put(LightBulb.DESCRIPTION.getName(), LightBulbShape::new);
+        map.put(Out.POLARITYAWARELEDDESCRIPTION.getName(), PolarityAwareLEDShape::new);
         map.put(Button.DESCRIPTION.getName(), ButtonShape::new);
         map.put(Probe.DESCRIPTION.getName(), ProbeShape::new);
         map.put(Clock.DESCRIPTION.getName(), ClockShape::new);
         map.put(Out.SEVENDESCRIPTION.getName(), SevenSegShape::new);
         map.put(Out.SEVENHEXDESCRIPTION.getName(), SevenSegHexShape::new);
+        map.put(Out.SIXTEENDESCRIPTION.getName(), SixteenShape::new);
         map.put(DummyElement.DATADESCRIPTION.getName(), DataShape::new);
         map.put(RotEncoder.DESCRIPTION.getName(), RotEncoderShape::new);
+        map.put(DipSwitch.DESCRIPTION.getName(), DipSwitchShape::new);
 
         map.put(Switch.DESCRIPTION.getName(), SwitchShape::new);
         map.put(Fuse.DESCRIPTION.getName(), FuseShape::new);
@@ -125,10 +131,12 @@ public final class ShapeFactory {
         map.put(Splitter.DESCRIPTION.getName(), SplitterShape::new);
         map.put(Driver.DESCRIPTION.getName(), DriverShape::new);
         map.put(DriverInvSel.DESCRIPTION.getName(), (attributes, inputs, outputs) -> new DriverShape(attributes, inputs, outputs, true));
+        map.put(BusSplitter.DESCRIPTION.getName(), BusSplitterShape::new);
         map.put(Tunnel.DESCRIPTION.getName(), TunnelShape::new);
 
         map.put(DummyElement.TEXTDESCRIPTION.getName(), TextShape::new);
         map.put(TestCaseElement.TESTCASEDESCRIPTION.getName(), TestCaseShape::new);
+        map.put(AsyncSeq.DESCRIPTION.getName(), AsyncClockShape::new);
 
         map.put(Diode.DESCRIPTION.getName(), DiodeShape::new);
         map.put(DiodeForward.DESCRIPTION.getName(), DiodeForewardShape::new);
@@ -188,7 +196,8 @@ public final class ShapeFactory {
                                 pt.getInputDescription(elementAttributes),
                                 pt.getOutputDescriptions(elementAttributes),
                                 elementAttributes.getLabel(),
-                                true)
+                                true,
+                                elementAttributes.get(Keys.WIDTH))
                                 .setInverterConfig(elementAttributes.get(Keys.INVERTER_CONFIG));
                     }
                 }

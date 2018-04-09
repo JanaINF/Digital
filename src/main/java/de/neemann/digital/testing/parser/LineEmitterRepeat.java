@@ -1,10 +1,14 @@
+/*
+ * Copyright (c) 2017 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.testing.parser;
 
 import de.neemann.digital.lang.Lang;
 
 /**
  * Repeats some inner table rows.
- * Created by hneemann on 19.04.17.
  */
 public class LineEmitterRepeat implements LineEmitter {
     private static final long MAX_LOOPS = 1L << 24;
@@ -32,9 +36,9 @@ public class LineEmitterRepeat implements LineEmitter {
 
     @Override
     public void emitLines(LineListener listener, Context conext) throws ParserException {
-        ContextWithVar c = new ContextWithVar(conext, name);
+        Context c = new Context(conext);
         for (int i = 0; i < size; i++) {
-            c.setValue(i);
+            c.setVar(name, i);
             inner.emitLines(listener, c);
         }
     }

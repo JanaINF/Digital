@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2018 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.draw.graphics.text.formatter;
 
 import de.neemann.digital.draw.graphics.text.text.*;
@@ -37,7 +42,7 @@ public final class SVGFormatter {
                     else
                         return "<tspan style=\"font-style:italic\">" + format(d.getContent(), true) + "</tspan>";
                 case OVERLINE:
-                    return "<tspan style=\"text-decoration: overline\">" + format(d.getContent(), mathMode) + "</tspan>";
+                    return '\u00AC' + format(d.getContent(), mathMode);
                 default:
                     return format(d.getContent(), mathMode);
             }

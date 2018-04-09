@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.core.memory;
 
 import de.neemann.digital.core.*;
@@ -8,8 +13,6 @@ import static de.neemann.digital.core.element.PinInfo.input;
 
 /**
  * A simple counter.
- *
- * @author hneemann
  */
 public class Counter extends Node implements Element {
 
@@ -81,7 +84,7 @@ public class Counter extends Node implements Element {
     public void setInputs(ObservableValues inputs) throws BitsException {
         enable = inputs.get(0).addObserverToValue(this).checkBits(1, this, 0);
         clockIn = inputs.get(1).addObserverToValue(this).checkBits(1, this, 1);
-        clrIn = inputs.get(2).addObserverToValue(this).checkBits(1, this, 2);
+        clrIn = inputs.get(2).checkBits(1, this, 2);
     }
 
     @Override

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.draw.graphics;
 
 import de.neemann.digital.core.Value;
@@ -5,7 +10,6 @@ import de.neemann.digital.core.Value;
 import java.awt.*;
 
 /**
- * @author hneemann
  */
 public final class Style {
     /**
@@ -283,7 +287,7 @@ public final class Style {
      */
     public Style deriveFillStyle(Color color) {
         return new Builder(this)
-                .setThickness(1)
+                .setThickness(0)
                 .setFilled(true)
                 .setColor(color)
                 .build();

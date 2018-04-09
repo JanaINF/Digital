@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.draw.shapes.ieee;
 
 import de.neemann.digital.core.Observer;
@@ -6,10 +11,7 @@ import de.neemann.digital.core.element.Keys;
 import de.neemann.digital.core.element.PinDescriptions;
 import de.neemann.digital.draw.elements.IOState;
 import de.neemann.digital.draw.elements.Pins;
-import de.neemann.digital.draw.graphics.Graphic;
-import de.neemann.digital.draw.graphics.GraphicTransform;
-import de.neemann.digital.draw.graphics.Style;
-import de.neemann.digital.draw.graphics.Vector;
+import de.neemann.digital.draw.graphics.*;
 import de.neemann.digital.draw.model.InverterConfig;
 import de.neemann.digital.draw.shapes.GenericShape;
 import de.neemann.digital.draw.shapes.InteractorInterface;
@@ -20,8 +22,6 @@ import static de.neemann.digital.draw.shapes.GenericShape.SIZE2;
 
 /**
  * IEEE Standard 91-1984 Shape
- *
- * @author hneemann
  */
 public abstract class IEEEGenericShape implements Shape {
 
@@ -62,7 +62,7 @@ public abstract class IEEEGenericShape implements Shape {
     @Override
     public void drawTo(Graphic graphic, Style highLight) {
         int offs = (inputs.size() / 2 - 1) * SIZE;
-        drawIEEE(new GraphicTransform(graphic, v -> v.add(0, offs)));
+        drawIEEE(new GraphicTransform(graphic, new TransformTranslate(new Vector(0, offs))));
 
         if (offs > 0) {
             graphic.drawLine(new Vector(1, 0), new Vector(1, offs - SIZE2 - 1), Style.NORMAL);

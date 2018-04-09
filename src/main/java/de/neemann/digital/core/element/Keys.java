@@ -1,11 +1,18 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.core.element;
 
 import de.neemann.digital.analyse.expression.format.FormatToExpression;
 import de.neemann.digital.core.arithmetic.BarrelShifterMode;
 import de.neemann.digital.core.arithmetic.LeftRightFormat;
+import de.neemann.digital.core.extern.Application;
 import de.neemann.digital.core.io.InValue;
 import de.neemann.digital.core.IntFormat;
 import de.neemann.digital.core.memory.DataField;
+import de.neemann.digital.core.memory.rom.ROMManger;
 import de.neemann.digital.draw.graphics.Style;
 import de.neemann.digital.draw.library.ElementLibrary;
 import de.neemann.digital.draw.model.InverterConfig;
@@ -15,14 +22,46 @@ import de.neemann.gui.language.Language;
 
 import java.awt.*;
 import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.Locale;
 
 /**
  * Collection of key constants
- *
- * @author hneemann
  */
 public final class Keys {
+
+    private static final class InstanceHolder {
+        private static final HashMap<String, Key> INSTANCE = createMap();
+
+        private static HashMap<String, Key> createMap() {
+            HashMap<String, Key> map = new HashMap<>();
+            for (Field k : Keys.class.getDeclaredFields()) {
+                if (Modifier.isStatic(k.getModifiers()) && Key.class.isAssignableFrom(k.getType())) {
+                    try {
+                        Key key = (Key) k.get(null);
+                        map.put(key.getKey(), key);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException("error accessing the Keys");
+                    }
+                }
+            }
+            return map;
+        }
+    }
+
+    /**
+     * Returns the key of the given name.
+     * If key does not exist, nul is returned.
+     *
+     * @param name the name of the key
+     * @return the key or null
+     */
+    public static Key getKeyByName(String name) {
+        return InstanceHolder.INSTANCE.get(name);
+    }
+
 
     private Keys() {
     }
@@ -55,6 +94,14 @@ public final class Keys {
 
 
     /**
+     * The counter max value
+     */
+    public static final Key.KeyInteger MAX_VALUE
+            = new Key.KeyInteger("maxValue", 0)
+            .setMin(0);
+
+
+    /**
      * the delay time used by the delay component
      */
     public static final Key.KeyInteger DELAY_TIME
@@ -62,6 +109,13 @@ public final class Keys {
             .setComboBoxValues(new Integer[]{1, 2, 3, 4, 5})
             .setMin(1)
             .setMax(20);
+
+    /**
+     * the timer delay time
+     */
+    public static final Key.KeyInteger MONOFLOP_DELAY
+            = new Key.KeyInteger("timerDelay", 1)
+            .setMin(1);
 
     /**
      * The elements label
@@ -107,6 +161,13 @@ public final class Keys {
             = new Key<>("InDefault", new InValue(0)).allowGroupEdit();
 
     /**
+     * The default value of the dip switch
+     */
+    public static final Key<Boolean> DIP_DEFAULT
+            = new Key<>("dipDefault", false);
+
+
+    /**
      * Color of LEDs
      */
     public static final Key<java.awt.Color> COLOR
@@ -123,6 +184,16 @@ public final class Keys {
      */
     public static final Key<String> OUTPUT_SPLIT
             = new Key<>("Output Splitting", "8");
+
+    /**
+     * The splitter spreading
+     */
+    public static final Key.KeyInteger SPLITTER_SPREADING
+            = new Key.KeyInteger("splitterSpreading", 1)
+            .setComboBoxValues(new Integer[]{1, 2, 3, 4})
+            .setMin(1)
+            .setMax(10);
+
 
     /**
      * flag to enable realtime mode at a clock
@@ -482,6 +553,40 @@ public final class Keys {
      */
     public static final Key<File> SETTINGS_JAR_PATH
             = new Key.KeyFile("jarPath", new File(""));
+
+    /**
+     * The manager which contains all the roms data
+     */
+    public static final Key<ROMManger> ROMMANAGER
+            = new Key<>("romContent", ROMManger.EMPTY);
+
+
+    /**
+     * The type of the external process
+     */
+    public static final Key.KeyEnum<Application.Type> APPLICATION_TYPE
+            = new Key.KeyEnum<>("applicationType", Application.Type.Generic, Application.Type.values());
+    /**
+     * The inputs used by the external process
+     */
+    public static final Key<String> EXTERNAL_INPUTS
+            = new Key<>("externalInputs", "in");
+    /**
+     * The outputs used by the external process
+     */
+    public static final Key<String> EXTERNAL_OUTPUTS
+            = new Key<>("externalOutputs", "out");
+    /**
+     * The code to be executed by the external process
+     */
+    public static final Key.LongString EXTERNAL_CODE
+            = new Key.LongString("Code").setRows(30).setColumns(80).setLineNumbers(true);
+
+    /**
+     * Path to ghdl
+     */
+    public static final Key.KeyFile SETTINGS_GHDL_PATH
+            = new Key.KeyFile("ghdlPath", new File("ghdl"));
 
 
     /**

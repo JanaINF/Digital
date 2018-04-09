@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.testing.parser;
 
 import de.neemann.digital.core.Bits;
 import de.neemann.digital.lang.Lang;
 import de.neemann.digital.data.Value;
 import de.neemann.digital.testing.parser.functions.Function;
+import de.neemann.digital.testing.parser.functions.Random;
 import de.neemann.digital.testing.parser.functions.SignExtend;
 
 import java.io.BufferedReader;
@@ -36,6 +42,7 @@ public class Parser {
      */
     public Parser(String data) {
         functions.put("signExt", new SignExtend());
+        functions.put("random", new Random());
         names = new ArrayList<>();
         tok = new Tokenizer(new BufferedReader(new StringReader(data)));
     }
@@ -99,6 +106,15 @@ public class Parser {
                     tok.consume();
                     expect(endToken);
                     return list.minimize();
+                case LET:
+                    tok.consume();
+                    expect(Tokenizer.Token.IDENT);
+                    final String varName=tok.getIdent();
+                    expect(Tokenizer.Token.EQUAL);
+                    final Expression intValue = parseExpression();
+                    expect(Tokenizer.Token.SEMICOLON);
+                    list.add((listener, context) -> context.setVar(varName, intValue.value(context)));
+                    break;
                 case REPEAT:
                     tok.consume();
                     expect(Tokenizer.Token.OPEN);

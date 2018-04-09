@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.draw.library;
 
 import de.neemann.digital.core.arithmetic.*;
 import de.neemann.digital.core.arithmetic.Comparator;
 import de.neemann.digital.core.basic.*;
 import de.neemann.digital.core.element.*;
+import de.neemann.digital.core.extern.External;
 import de.neemann.digital.core.flipflops.*;
 import de.neemann.digital.core.io.*;
 import de.neemann.digital.core.memory.*;
@@ -13,6 +19,7 @@ import de.neemann.digital.core.pld.PullDown;
 import de.neemann.digital.core.pld.PullUp;
 import de.neemann.digital.core.switching.*;
 import de.neemann.digital.core.wiring.*;
+import de.neemann.digital.core.flipflops.Monoflop;
 import de.neemann.digital.draw.elements.Circuit;
 import de.neemann.digital.draw.elements.PinException;
 import de.neemann.digital.draw.elements.Tunnel;
@@ -29,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -41,11 +49,10 @@ import java.util.*;
  * When a file is selected it is loaded to the library. After that also an icon is available.
  * This is done because the loading of a circuit and the creation of an icon is very time consuming and should
  * be avoided if not necessary. It's a kind of lazy loading.
- *
- * @author hneemann
  */
 public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElementLibrary.class);
+    private static final long MIN_RESCAN_INTERVAL = 5000;
 
     /**
      * @return the additional library path
@@ -76,6 +83,7 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
     private ElementLibraryFolder custom;
     private File rootLibraryPath;
     private Exception exception;
+    private long lastRescanTime;
 
     /**
      * Creates a new instance.
@@ -107,12 +115,15 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
                         .add(In.DESCRIPTION)
                         .add(Clock.DESCRIPTION)
                         .add(Button.DESCRIPTION)
+                        .add(DipSwitch.DESCRIPTION)
                         .add(DummyElement.TEXTDESCRIPTION)
                         .add(Probe.DESCRIPTION)
                         .add(new LibraryNode(Lang.get("lib_more"))
                                 .add(LightBulb.DESCRIPTION)
+                                .add(Out.POLARITYAWARELEDDESCRIPTION)
                                 .add(Out.SEVENDESCRIPTION)
                                 .add(Out.SEVENHEXDESCRIPTION)
+                                .add(Out.SIXTEENDESCRIPTION)
                                 .add(LedMatrix.DESCRIPTION)
                                 .add(DummyElement.DATADESCRIPTION)
                                 .add(RotEncoder.DESCRIPTION)
@@ -142,7 +153,8 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
                         .add(FlipflopD.DESCRIPTION)
                         .add(FlipflopT.DESCRIPTION)
                         .add(FlipflopJKAsync.DESCRIPTION)
-                        .add(FlipflopDAsync.DESCRIPTION))
+                        .add(FlipflopDAsync.DESCRIPTION)
+                        .add(Monoflop.DESCRIPTION))
                 .add(new LibraryNode(Lang.get("lib_memory"))
                         .add(Register.DESCRIPTION)
                         .add(ROM.DESCRIPTION)
@@ -153,7 +165,8 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
                         .add(GraphicCard.DESCRIPTION)
                         .add(RAMDualAccess.DESCRIPTION)
                         .add(RegisterFile.DESCRIPTION)
-                        .add(Counter.DESCRIPTION))
+                        .add(Counter.DESCRIPTION)
+                        .add(CounterPreset.DESCRIPTION))
                 .add(new LibraryNode(Lang.get("lib_arithmetic"))
                         .add(Add.DESCRIPTION)
                         .add(Sub.DESCRIPTION)
@@ -178,8 +191,11 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
                 .add(new LibraryNode(Lang.get("lib_misc"))
                         .add(TestCaseElement.TESTCASEDESCRIPTION)
                         .add(PowerSupply.DESCRIPTION)
+                        .add(BusSplitter.DESCRIPTION)
                         .add(Reset.DESCRIPTION)
-                        .add(Break.DESCRIPTION));
+                        .add(Break.DESCRIPTION)
+                        .add(AsyncSeq.DESCRIPTION)
+                        .add(External.DESCRIPTION));
 
         addExternalJarComponents(jarFile);
 
@@ -384,11 +400,15 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
             if (rootLibraryPath == null)
                 throw new ElementNotFoundException(Lang.get("err_fileNeedsToBeSaved"));
 
-            rescanFolder();
+            LOGGER.debug("could not find " + elementName);
 
-            node = map.get(elementName);
-            if (node != null)
-                return node.getDescription();
+            if (System.currentTimeMillis() - lastRescanTime > MIN_RESCAN_INTERVAL) {
+                rescanFolder();
+
+                node = map.get(elementName);
+                if (node != null)
+                    return node.getDescription();
+            }
         } catch (IOException e) {
             throw new ElementNotFoundException(Lang.get("msg_errorImportingModel_N0", elementName), e);
         }
@@ -396,7 +416,7 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
         throw new ElementNotFoundException(Lang.get("err_element_N_notFound", elementName));
     }
 
-    private void rescanFolder() throws IOException {
+    private void rescanFolder() {
         LOGGER.debug("rescan folder");
         LibraryNode cn = custom.scanFolder(rootLibraryPath, false);
 
@@ -404,6 +424,7 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
 
         if (cn != null)
             fireLibraryChanged(cn);
+        lastRescanTime = System.currentTimeMillis();
     }
 
     /**
@@ -511,7 +532,7 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
             Circuit circuit;
             try {
                 circuit = Circuit.loadCircuit(file, shapeFactory);
-            } catch (IOException e) {
+            } catch (FileNotFoundException e) {
                 throw new IOException(Lang.get("err_couldNotFindIncludedFile_N0", file));
             }
             ElementTypeDescriptionCustom description =

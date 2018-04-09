@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.lang;
 
 import de.neemann.digital.integration.Resources;
@@ -11,7 +16,6 @@ import java.util.HashSet;
 import java.util.Map;
 
 /**
- * Created by hneemann on 20.10.16.
  */
 public class TestLang extends TestCase {
     private static final String SOURCEPATH = "/home/hneemann/Dokumente/Java/digital/src/main/java";
@@ -43,16 +47,14 @@ public class TestLang extends TestCase {
      * @throws IOException IOException
      */
     public void testUsages() throws IOException {
-        String sources = System.getProperty("sources");
-        if (sources == null) {
-            System.out.println("environment variable sources not set!!!");
-            System.out.println("Try to use hardcoded " + SOURCEPATH);
-            sources = SOURCEPATH;
-        }
+        File sources = getSourceFiles();
         HashSet<String> keys = new HashSet<>();
-        parseTree(new File(sources), keys);
+        parseTree(sources, keys);
         // check also test code. Is needed because documentation generation uses language key also.
-        parseTree(new File(Resources.getRoot(),"../java"), keys);
+        parseTree(new File(Resources.getRoot(), "../java"), keys);
+
+        // check templates for error messages
+        parseTree(new File(sources, "../resources"), keys);
 
         StringBuilder sb = new StringBuilder();
         for (String key : map.keySet()) {
@@ -64,9 +66,22 @@ public class TestLang extends TestCase {
                 }
             }
         }
-        if (sb.length()>0)
-            fail("there are unused language keys: "+sb.toString());
+        if (sb.length() > 0)
+            fail("there are unused language keys: " + sb.toString());
     }
+
+    public static File getSourceFiles() {
+        String sources = System.getProperty("sources");
+        if (sources == null) {
+            System.out.println("environment variable sources not set!!!");
+            System.out.println("Try to use hardcoded " + SOURCEPATH);
+            sources = SOURCEPATH;
+        }
+        return new File(sources);
+    }
+
+    private static final String PATTERN = "Lang.get(\"";
+    private static final String TEM_PATTERN = "panic(\"";
 
     private void parseTree(File file, HashSet<String> keys) throws IOException {
         File[] files = file.listFiles();
@@ -74,9 +89,12 @@ public class TestLang extends TestCase {
             for (File f : files) {
                 if (f.isDirectory() && f.getName().charAt(0) != '.')
                     parseTree(f, keys);
-                if (f.isFile() && f.getName().endsWith(".java")) {
+                if (f.isFile()) {
                     try {
-                        checkSourceFile(f, keys);
+                        if (f.getName().endsWith(".java"))
+                            checkSourceFile(f, keys, PATTERN);
+                        if (f.getName().endsWith(".tem"))
+                            checkSourceFile(f, keys, TEM_PATTERN);
                     } catch (AssertionFailedError e) {
                         throw new AssertionFailedError(e.getMessage() + " in file " + f);
                     }
@@ -84,14 +102,14 @@ public class TestLang extends TestCase {
             }
     }
 
-    private void checkSourceFile(File f, HashSet<String> keys) throws IOException {
+    private void checkSourceFile(File f, HashSet<String> keys, String pattern) throws IOException {
         try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "utf-8"))) {
             int linecount = 0;
             String line;
             while ((line = r.readLine()) != null) {
                 linecount++;
                 try {
-                    checkSourceLine(line, keys);
+                    checkSourceLine(line, keys, pattern);
                 } catch (AssertionFailedError e) {
                     throw new AssertionFailedError(e.getMessage() + " in line " + linecount);
                 }
@@ -99,9 +117,7 @@ public class TestLang extends TestCase {
         }
     }
 
-    private static final String PATTERN = "Lang.get(\"";
-
-    private void checkSourceLine(String line, HashSet<String> keys) {
+    private void checkSourceLine(String line, HashSet<String> keys, String PATTERN) {
         if (line.contains(PATTERN)) {
             int pos = line.indexOf(PATTERN, 0);
             while (pos >= 0) {

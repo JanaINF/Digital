@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.testing.parser;
 
 import java.io.IOException;
@@ -6,14 +11,12 @@ import java.util.HashMap;
 
 /**
  * Simple tokenizer to tokenize boolean expressions.
- *
- * @author hneemann
  */
 public class Tokenizer {
 
     enum Token {
         UNKNOWN, IDENT, AND, OR, XOR, NOT, OPEN, CLOSE, NUMBER, EOL, EOF, SHIFTLEFT, SHIFTRIGHT, COMMA, EQUAL,
-        ADD, SUB, MUL, GREATER, SMALER, DIV, MOD, END, LOOP, REPEAT, BITS
+        ADD, SUB, MUL, GREATER, SMALER, DIV, MOD, END, LOOP, REPEAT, BITS, SEMICOLON, LET
     }
 
     private static HashMap<String, Token> statementMap = new HashMap<>();
@@ -23,6 +26,7 @@ public class Tokenizer {
         statementMap.put("loop", Token.LOOP);
         statementMap.put("repeat", Token.REPEAT);
         statementMap.put("bits", Token.BITS);
+        statementMap.put("let", Token.LET);
     }
 
     private final Reader in;
@@ -92,6 +96,9 @@ public class Tokenizer {
                 break;
             case ')':
                 token = Token.CLOSE;
+                break;
+            case ';':
+                token = Token.SEMICOLON;
                 break;
             case '&':
                 token = Token.AND;

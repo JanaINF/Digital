@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.integration;
 
 import de.neemann.digital.core.Model;
@@ -19,8 +24,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Loads a circuit and runs it to the first break point
- *
- * @author hneemann
  */
 public class ToBreakRunner {
 
@@ -76,8 +79,11 @@ public class ToBreakRunner {
 
         ModelCreator md = new ModelCreator(circuit, library);
         model = md.createModel(false);
-        if (doInit)
+        if (doInit) {
+            if (model.getAsyncInfos() != null)
+                model.setAsyncMode();
             model.init(true);
+        }
     }
 
     /**
@@ -135,5 +141,10 @@ public class ToBreakRunner {
      */
     public ElementLibrary getLibrary() {
         return library;
+    }
+
+    public void close() {
+        if (model != null)
+            model.close();
     }
 }

@@ -6,35 +6,13 @@ The most recent changes are listed in the [release notes](distribution/ReleaseNo
 
 # Digital #
 
+Digital is an easy-to-use digital circuit simulator. 
+It's designed for educational purposes, and I use it in my lectures to illustrate digital electronics.
+
 ![screnshot](screenshot.png)
 
 ![screnshot2](screenshot2.png)
 
-Digital is a simulator for digital circuits. It is designed for educational purposes and I use it in my lectures.
-Prior to the development of Digital, I used [Logisim](http://www.cburch.com/logisim/), developed by Carl Burch.
-If you are familiar with Logisim you will recognize the wire color scheme.
-
-Logisim is an excellent and proven tool for teaching purposes. Unfortunately, Carl Burch discontinued the development of 
-Logisim in 2014. Instead he has started the development of a new simulator called [Toves](http://www.toves.org/) in 2013. 
-In his [blog](http://www.toves.org/blog/) he explained why he decided to develop a new simulator instead of improving Logisim. 
-In short: There are weaknesses in Logisims architecture which are too difficult to overcome.
-Unfortunately, the development of Toves was discontinued at a very early stage.
-
-Carl Burch has released Logisim as open source so there are a number of forks to continue the work on Logisim:
-
-- [Logisim-Evolution](https://github.com/reds-heig/logisim-evolution) by people of a group of swiss institutes (Haute École Spécialisée Bernoise, Haute École du paysage, d'ingénierie et d'architecture de Genève, and Haute École d'Ingénierie et de Gestion du Canton de Vaud)
-- [Logisim](https://github.com/lawrancej/logisim) by Joseph Lawrance at Wentworth Institute of Technology, Boston, MA 
-- [Logisim-iitd](https://code.google.com/archive/p/logisim-iitd/) from the Indian Institute of Technology Delhi
-- [Logisim](http://www.cs.cornell.edu/courses/cs3410/2015sp/) from the CS3410 course of the Cornell University
-
-But as far as I know, these projects do not work on solving the architectural difficulties. 
-They are more about adding features and fixing bugs. In [Logisim-Evolution](https://github.com/reds-heig/logisim-evolution), 
-for example, a VHDL/Verilog export was added.
-
-So I decided to implement a new simulator completely from scratch and started the implementation of Digital in march 2016.
-In the meantime a development level has been reached which is comparable to Logisim.
-In some areas (performance, testing of circuits, circuit analysis, hardware support) Logisim has already been exceeded.
-  
 ## Features ##
 
 These are the main features of Digital:
@@ -45,33 +23,34 @@ These are the main features of Digital:
 - Simple testing of circuits: You can create test cases and execute them to verify your design.
 - Many examples: From a transmission gate D-flip-flop to a complete (simple) MIPS-like single cycle CPU.
 - Contains a library with the most commonly used 74xx series integrated circuits. 
-- Fast-run mode to perform a simulation without updating the GUI.
-  A simple processor can be clocked at 100kHz.
+- Good performance: The example processor can be clocked at 120 kHz.
 - Supports large circuits: The "Conway's Game of Life" example consists of about 2400 active components
   and works just fine.
 - Its possible to use custom components which are implemented in Java and packed in a jar file. 
   See this [example](https://github.com/hneemann/digitalCustomComponents) for details.   
 - Simple remote TCP interface which e.g. allows an [assembler IDE](https://github.com/hneemann/Assembler) to control 
   the simulator.
+- Components can be described using VHDL. The open source VHDL simulator [ghdl](http://ghdl.free.fr/) is required to 
+  simulate a VHDL defined component. The ghdl source code is also available at [GitHub](https://github.com/ghdl/ghdl).  
+- Export to VHDL: A circuit can be exported to VHDL. There is also support for the 
+  [BASYS3 Board](https://reference.digilentinc.com/reference/programmable-logic/basys-3/start). See the documentation 
+  for details. The examples folder contains a variant of the example CPU, which runs on a BASYS3 board.
 - Direct export of JEDEC files which you can flash to a [GAL16v8](https://www.microchip.com/wwwproducts/en/ATF16V8C) 
   or a [GAL22v10](https://www.microchip.com/wwwproducts/en/ATF22V10C). These chips are somewhat outdated (introduced in 1985!) 
   but sufficient for beginners exercises, easy to understand and well documented. Also the
   [ATF150x](https://www.microchip.com/design-centers/programmable-logic/spld-cpld/cpld-atf15xx-family) chips are 
   supported which offer up to 128 macro-cells and in system programming. See the documentation for details.
-- Export to VHDL: A circuit can be exported to VHDL. There is also support for the 
-  [BASYS3 Board](https://reference.digilentinc.com/reference/programmable-logic/basys-3/start). See the documentation 
-  for details. The examples folder contains a variant of the simple CPU, which runs on a BASYS3 board.
 - SVG export of circuits, including a LaTeX/Inkscape compatible SVG version (see 
   [ctan](https://www.ctan.org/tex-archive/info/svg-inkscape))
 - No legacy code.
-- Good test coverage (exclusive of GUI classes about 80%).
+- Good test coverage (about 80%).
   Almost all examples contain test cases which ensure that they work correctly.
 
 ## Documentation ##
 
-A [documentation](https://github.com/hneemann/Digital/releases/latest) is available in English and German.
+The [documentation](https://github.com/hneemann/Digital/releases/latest) is available in English and German.
 It is still very incomplete but it contains a chapter "First Steps" which explains the basic usage of Digital.
-The documentation also contains a list of available keyboard shortcuts. 
+The documentation also contains a list of available 74xx chips and a list of available keyboard shortcuts. 
 
 ## Comments ##
 
@@ -79,9 +58,34 @@ If you want to send a bug report or feature request please use the GitHub
 [issue tracker](https://github.com/hneemann/Digital/issues/new). 
 This helps me to improve Digital, so do not hesitate.
 
-You can also send a private message to [digital-simulator@web.de](mailto:digital-simulator@web.de).
+It's also possible to send a private message to [digital-simulator@web.de](mailto:digital-simulator@web.de).
 
 ## Motivation ##
+
+Prior to the development of Digital, I used [Logisim](http://www.cburch.com/logisim/), developed by Carl Burch.
+If you are familiar with Logisim you will recognize the wire color scheme.
+
+Logisim is a excellent and proven tool for teaching purposes, that has been actively developed until 2011. 
+In 2013 Carl Burch has started the development of a new simulator called [Toves](http://www.toves.org/). 
+In his [blog](http://www.toves.org/blog/) he explained why he decided to develop a new simulator instead of improving Logisim. 
+In short: There are weaknesses in Logisims architecture which are too difficult to overcome.
+Unfortunately, the development of Toves was discontinued at a very early stage.
+
+In 2014, Carl Burch finally [discontinued](http://www.cburch.com/logisim/retire-note.html) the development of
+Logisim. Since Logisim was released as open source, there are a number of forks to continue the work on Logisim:
+
+- [Logisim-Evolution](https://github.com/reds-heig/logisim-evolution) by people of a group of swiss institutes (Haute École Spécialisée Bernoise, Haute École du paysage, d'ingénierie et d'architecture de Genève, and Haute École d'Ingénierie et de Gestion du Canton de Vaud)
+- [Logisim](https://github.com/lawrancej/logisim) by Joseph Lawrance at Wentworth Institute of Technology, Boston, MA 
+- [Logisim-iitd](https://code.google.com/archive/p/logisim-iitd/) from the Indian Institute of Technology Delhi
+- [Logisim](http://www.cs.cornell.edu/courses/cs3410/2015sp/) from the CS3410 course of the Cornell University
+
+But as far as I know, these projects do not work on solving the architectural difficulties. 
+They are more about adding features and fixing bugs. In [Logisim-Evolution](https://github.com/reds-heig/logisim-evolution), 
+for example, a VHDL/Verilog export was added.
+
+So I also decided to implement a new simulator completely from scratch and started the implementation of Digital in march 2016.
+In the meantime a development level has been reached which is comparable to Logisim.
+In some areas (performance, testing of circuits, circuit analysis, hardware support) Logisim has already been exceeded.
 
 Below I would like to explain briefly the reasons which led me to start a new development:
 
@@ -208,6 +212,6 @@ If you want to build Digital from the source code:
   * A discussion should avoid duplicate or unnecessary work.  
   * Before you send a pull request, make sure that at least `mvn install` runs without errors.
 * Don't introduce new findbugs issues.
-* Try to keep the test coverage high. The target is 80% test coverage at all non GUI components.
+* Try to keep the test coverage high. The target is a minimum of 80% test coverage.
 * So far, there are only a few GUI tests, so that the overall test coverage is only slightly below 80%.
   Try to keep the amount of untested GUI code low.

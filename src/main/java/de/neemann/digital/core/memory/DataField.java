@@ -1,6 +1,12 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.core.memory;
 
 import de.neemann.digital.core.Bits;
+import de.neemann.digital.hdl.hgs.HGSArray;
 import de.neemann.digital.lang.Lang;
 
 import java.io.*;
@@ -8,9 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * @author hneemann
  */
-public class DataField {
+public class DataField implements HGSArray {
 
     /***
      * Simple default data field
@@ -31,7 +36,13 @@ public class DataField {
         this(new long[size], size);
     }
 
-    private DataField(long[] data, int size) {
+    /**
+     * Creates a new data field
+     *
+     * @param data the data
+     * @param size the size
+     */
+    public DataField(long[] data, int size) {
         this.size = size;
         this.data = data;
     }
@@ -128,8 +139,9 @@ public class DataField {
      *
      * @param addr  the address
      * @param value the value
+     * @return this for chained calls
      */
-    public void setData(int addr, long value) {
+    public DataField setData(int addr, long value) {
         if (addr < size) {
             if (addr >= data.length)
                 data = Arrays.copyOf(data, size);
@@ -139,6 +151,7 @@ public class DataField {
                 fireChanged(addr);
             }
         }
+        return this;
     }
 
     /**
@@ -205,11 +218,31 @@ public class DataField {
      *
      * @param addr the address which value has changed
      */
-    public void fireChanged(int addr) {
+    private void fireChanged(int addr) {
         synchronized (listeners) {
             for (DataListener l : listeners)
                 l.valueChanged(addr);
         }
+    }
+
+    /**
+     * Sets the data from the given data field
+     *
+     * @param dataField the data to set to this data field
+     */
+    public void setDataFrom(DataField dataField) {
+        data = Arrays.copyOf(dataField.data, size);
+        fireChanged(-1);
+    }
+
+    @Override
+    public int hgsArraySize() {
+        return data.length;
+    }
+
+    @Override
+    public Object hgsArrayGet(int i) {
+        return getDataWord(i);
     }
 
     /**

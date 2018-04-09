@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 Helmut Neemann
+ * Use of this source code is governed by the GPL v3 license
+ * that can be found in the LICENSE file.
+ */
 package de.neemann.digital.draw.graphics;
 
 import de.neemann.digital.draw.graphics.text.formatter.GraphicsFormatter;
@@ -9,8 +14,6 @@ import java.awt.geom.Path2D;
 
 /**
  * Used to draw on a {@link Graphics2D} instance.
- *
- * @author hneemann
  */
 public class GraphicSwing implements Graphic {
 
@@ -65,13 +68,15 @@ public class GraphicSwing implements Graphic {
         //CHECKSTYLE.OFF: ModifiedControlVariable
         for (int i = 0; i < p.size(); i++) {
             if (i == 0) {
-                path.moveTo(p.get(i).x, p.get(i).y);
+                path.moveTo(p.get(i).getXFloat(), p.get(i).getYFloat());
             } else {
                 if (p.isBezierStart(i)) {
-                    path.curveTo(p.get(i).x, p.get(i).y, p.get(i + 1).x, p.get(i + 1).y, p.get(i + 2).x, p.get(i + 2).y);
+                    path.curveTo(p.get(i).getXFloat(), p.get(i).getYFloat(),
+                            p.get(i + 1).getXFloat(), p.get(i + 1).getYFloat(),
+                            p.get(i + 2).getXFloat(), p.get(i + 2).getYFloat());
                     i += 2;
                 } else
-                    path.lineTo(p.get(i).x, p.get(i).y);
+                    path.lineTo(p.get(i).getXFloat(), p.get(i).getYFloat());
             }
         }
         //CHECKSTYLE.ON: ModifiedControlVariable
@@ -81,7 +86,8 @@ public class GraphicSwing implements Graphic {
 
         if (style.isFilled() && p.isClosed())
             gr.fill(path);
-        gr.draw(path);
+        if (style.getThickness() > 0)
+            gr.draw(path);
     }
 
     @Override
