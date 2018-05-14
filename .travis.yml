@@ -4,17 +4,17 @@ jdk:
 sudo: false
 
 install:
-    - sudo apt-get -qq update
-    - sudo apt-get install gnat
-    - git clone --depth 1 https://github.com/ghdl/ghdl.git ghdl
-    - cd ghdl
-    - mkdir build-mcode
-    - cd build-mcode
-    - ../configure --prefix=../../install-ghdl-mcode/
-    - make
-    - make install
-    - cd ../../
-    - export PATH=$PATH:install-ghdl-mcode/bin/
+     - sudo apt-get -qq update
+     - sudo apt-get install gnat
+     - git clone --depth 1 https://github.com/ghdl/ghdl.git ghdl
+     - cd ghdl
+     - pwd
+     - ./configure --prefix=/usr/local/install-ghdl-mcode
+     - make
+     - sudo make install
+     - cd ../
+     - export PATH=$PATH:/usr/local/install-ghdl-mcode/bin/
+     - echo $PATH
 
 script: mvn clean install
 #deploy:
