@@ -5,17 +5,17 @@ jdk:
 sudo: false
 
 install:
-     - sudo apt-get -qq update
-     - sudo apt-get install gnat
-     - git clone --depth 1 https://github.com/ghdl/ghdl.git ghdl
-     - cd ghdl
-     - pwd
-     - ./configure --prefix=/usr/local/install-ghdl-mcode
-     - make
-     - sudo make install
-     - cd ../
-     - export PATH=$PATH:/usr/local/install-ghdl-mcode/bin/
-    - echo $PATH
+       - sudo apt-get -qq update
+       - sudo apt-get install gnat
+       - git clone --depth 1 https://github.com/ghdl/ghdl.git ghdl
+       - cd ghdl
+       - pwd
+       - ./configure --prefix=/usr/local/install-ghdl-mcode
+       - make
+       - sudo make install
+       - cd ../
+       - export PATH=$PATH:/usr/local/install-ghdl-mcode/bin/
+       - echo $PATH
 
   #   - wget https://github.com/ghdl/ghdl/archive/v0.35.tar.gz
   #   - tar xzvf v0.35.tar.gz
