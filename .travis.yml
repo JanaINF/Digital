@@ -8,7 +8,7 @@ install:
        - sudo apt-get -qq update
        - sudo apt-get install gnat
        - wget https://github.com/ghdl/ghdl/archive/v0.35.tar.gz
-       - tar xzvf ghdl-0.35.tar.gz
+       - tar xzvf v0.35.tar.gz
        - cd ghdl-0.35
        - ./configure
        - make
